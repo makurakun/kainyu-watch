@@ -112,7 +112,23 @@ def dedupe_key(title):
 FX_OFFICIALS = ["片山", "三村", "財務相", "財務官", "ベセント", "米財務長官"]
 
 
+# 過去の介入を振り返る記事（議事要旨・実施額の公表など）は「けん制」扱いに下げる
+RETRO_WORDS = ["議事要旨", "判明", "実施額", "介入額", "公表", "振り返", "明らかに", "効果は", "検証"]
+RETRO_RE = re.compile(r"\d+月(\d+日)?の.{0,12}介入")
+
+
+def is_retro(title):
+    return any(w in title for w in RETRO_WORDS) or bool(RETRO_RE.search(title))
+
+
 def classify(title):
+    level, hits = _classify(title)
+    if level >= 2 and is_retro(title):
+        return 1, hits
+    return level, hits
+
+
+def _classify(title):
     if not any(w in title for w in SPEAKERS):
         return 0, []
     has_fx = any(w in title for w in FX_WORDS)
